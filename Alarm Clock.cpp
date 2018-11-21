@@ -41,7 +41,7 @@ public:
         for(size_t i=0;i<times.size();i++)
         {
             raw = system_clock::to_time_t(times[i]);
-            strftime(s,100,"%d/%m/%Y %H:%M:%S",gmtime(&raw));
+            strftime(s,100,"%d/%m/%Y %H:%M:%S",localtime(&raw));
             fout<<s<<"\n";
         }
         fout.close();
@@ -127,7 +127,7 @@ int main(int argc, char** argv)
                     case '3':
                         cout<<"System time : \n";
                         raw = system_clock::to_time_t(system_clock::now());
-                        strftime(buf,100,"%d/%m/%Y %H:%M:%S",gmtime(&raw));
+                        strftime(buf,100,"%d/%m/%Y %H:%M:%S",localtime(&raw));
                         cout<<buf<<"\n"; break;
                     }
                 }
