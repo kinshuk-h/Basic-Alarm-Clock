@@ -31,7 +31,11 @@ public:
         }
         fin.close();
     }
-    ~Alarm()
+    vector<time_point<system_clock>>::size_type count() const noexcept
+    {
+        return times.size();
+    }
+    void refresh()
     {
         char s[100]; time_t raw; ofstream fout; fout.open("AlarmList.cfg",ios::trunc);
         for(size_t i=0;i<times.size();i++)
@@ -41,14 +45,6 @@ public:
             fout<<s<<"\n";
         }
         fout.close();
-    }
-    vector<time_point<system_clock>>::size_type count() const noexcept
-    {
-        return times.size();
-    }
-    void refresh()
-    {
-
     }
     void add(time_point<system_clock> point)
     {
@@ -81,7 +77,7 @@ int main(int argc, char** argv)
 {
     //BindToRegistry(argv[0]);
 
-    Alarm Clock; char buf[100]; cout<<Clock.count()<<"\n";
+    Alarm Clock; char buf[100];
 
     HANDLE in = GetStdHandle(STD_INPUT_HANDLE);
     INPUT_RECORD rec; DWORD ev; tm timeinfo; time_t raw;
@@ -105,8 +101,9 @@ int main(int argc, char** argv)
             cout<<"1) Add a new alarm\n";
             cout<<"2) View, modify and delete existing alarms\n";
             cout<<"3) View current system time\n";
-            cout<<"3) Alter settings : Wake up media, Volume, Permissions, etc.\n\n";
-            print = true;
+            cout<<"4) Alter settings : Wake up media, Volume, Permissions, etc.\n\n";
+            cout<<"Currently "<<Clock.count()<<" Alarm(s) are set as of now.\n\n";
+            print = true; Clock.refresh();
         }
         GetNumberOfConsoleInputEvents(in,&ev);
         if(ev>0)
@@ -130,8 +127,8 @@ int main(int argc, char** argv)
                     case '3':
                         cout<<"System time : \n";
                         raw = system_clock::to_time_t(system_clock::now());
-                        strftime(buf,100,"%d/%m/%Y %H:%M:%S",gmtime(&raw)); break;
-                        cout<<buf<<"\n";
+                        strftime(buf,100,"%d/%m/%Y %H:%M:%S",gmtime(&raw));
+                        cout<<buf<<"\n"; break;
                     }
                 }
                 cout<<"\n";
