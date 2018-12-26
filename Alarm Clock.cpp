@@ -1,87 +1,44 @@
-#include <algorithm>
-#include <windows.h>
-#include <cxxabi.h>
-#include <typeinfo>
-#include <iostream>
-#include <iomanip>
-#include <sstream>
-#include <fstream>
-#include <string>
-#include <chrono>
-#include <vector>
-#include <ctime>
+#include "Interface.hpp"
+#include "Time.hpp"
 
 using namespace std;
 using namespace chrono;
 using namespace std::literals;
 
-class Alarm
-{
-    vector<time_point<system_clock>> times;
-public:
-    Alarm()
-    {
-        ifstream fin; fin.open("AlarmList.cfg");
-        string s; tm t; stringstream ss;
-        while(getline(fin,s))
-        {
-            time_t raw; time(&raw); t = *gmtime(&raw);
-            ss.str(s); ss>>get_time(&t,"%d/%m/%Y %H:%M:%S");
-            times.push_back(system_clock::from_time_t(mktime(&t)));
-        }
-        fin.close();
-    }
-    vector<time_point<system_clock>>::size_type count() const noexcept
-    {
-        return times.size();
-    }
-    void refresh()
-    {
-        char s[100]; time_t raw; ofstream fout; fout.open("AlarmList.cfg",ios::trunc);
-        for(size_t i=0;i<times.size();i++)
-        {
-            raw = system_clock::to_time_t(times[i]);
-            strftime(s,100,"%d/%m/%Y %H:%M:%S",localtime(&raw));
-            fout<<s<<"\n";
-        }
-        fout.close();
-    }
-    void add(time_point<system_clock> point)
-    {
-        times.push_back(point);
-    }
-    bool check(time_point<system_clock> value)
-    {
-        return false;
-    }
-};
+bool its_time;
 
-// For Testing Only : Returns correct form of the name of a type.
-char* demangle(string s)
+// Keeps checking for alarm hit, parallel to the program.
+void try_alarm()
 {
-    char* res; int status;
-    res = abi::__cxa_demangle(s.c_str(),0,0,&status);
-    return res;
-}
-
-// Binds the program to the local machine's registry, enabling launch of the code at startup.
-void BindToRegistry(char* path)
-{
-    HKEY hkey = nullptr;
-    RegCreateKey(HKEY_LOCAL_MACHINE,"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run",&hkey);
-    RegSetValueExA(hkey, "Alarm Clock", 0, REG_SZ , (BYTE*)path, sizeof(char)*(lstrlen(path)+1));
-    RegCloseKey(hkey);
+    m1.lock();
+    if(Clock.check(current_time()))
+    {
+        its_time = true;
+        system("cls");
+        cout<<"BOOM!\n";
+        SHELLEXECUTEINFO rSEI ={0}; rSEI.cbSize = sizeof( rSEI ); rSEI.lpVerb = "open";
+        rSEI.lpFile = "";
+        rSEI.lpParameters = "";
+        rSEI.lpDirectory = "";
+        rSEI.nShow = SW_HIDE; rSEI.fMask = SEE_MASK_NOCLOSEPROCESS;
+        ShellExecuteEx( &rSEI );
+        // Play the alarm for 120 seconds.
+        WaitForSingleObject(rSEI.hProcess,120000);
+        CloseHandle(rSEI.hProcess);
+    }
+    else its_time = false;
+    m1.unlock();
 }
 
 int main(int argc, char** argv)
 {
     //BindToRegistry(argv[0]);
 
-    Alarm Clock; char buf[100];
+    //thread t1(try_alarm);
+    //t1.join();
 
-    HANDLE in = GetStdHandle(STD_INPUT_HANDLE);
-    INPUT_RECORD rec; DWORD ev; tm timeinfo; time_t raw;
-    time_point<system_clock> event; stringstream ss; string s;
+    char buf[100]; auto old_count = Clock.count(); string s;
+    INPUT_RECORD rec; DWORD ev; time_t raw; bool print = false;
 
     //std::cout<<demangle(typeid(decltype(tp)).name())<<"\n";
     //std::cout<<demangle(typeid(decltype(system_clock::now())).name())<<"\n";
@@ -91,47 +48,60 @@ int main(int argc, char** argv)
     //else cout<<"Gotta wait now\n";
     //if(tp<=system_clock::now()) cout<<"Error : Cannot set an alarm in the past.\n";
 
-    bool print = false;
     while(true)
     {
-        if(!print)
+        if(!its_time)
         {
-            cout<<"Basic Alarm Clock\n-----------------\n\n";
-            cout<<"Enter an Option : \n";
-            cout<<"1) Add a new alarm\n";
-            cout<<"2) View, modify and delete existing alarms\n";
-            cout<<"3) View current system time\n";
-            cout<<"4) Alter settings : Wake up media, Volume, Permissions, etc.\n\n";
-            cout<<"Currently "<<Clock.count()<<" Alarm(s) are set as of now.\n\n";
-            print = true; Clock.refresh();
-        }
-        GetNumberOfConsoleInputEvents(in,&ev);
-        if(ev>0)
-        {
-            ReadConsoleInput(in,&rec,1,&ev);
-            if(rec.EventType==KEY_EVENT)
+            if(!print)
             {
-                if(rec.Event.KeyEvent.bKeyDown)
+                cout<<"Basic Alarm Clock\n-----------------\n\n";
+                cout<<"Enter an Option : \n";
+                cout<<"1) Add a new alarm\n";
+                cout<<"2) View, modify and delete existing alarms\n";
+                cout<<"3) View current system time\n";
+                cout<<"4) Alter settings : Wake up media, Volume, Permissions, etc.\n\n";
+                //cout<<"Alarm Count : "<<Clock.count()<<"\n";
+                print = true; if(Clock.count()!=old_count) { Clock.refresh(); old_count = Clock.count(); }
+            }
+            GetNumberOfConsoleInputEvents(in,&ev);
+            if(ev>0&&!its_time)
+            {
+                ReadConsoleInput(in,&rec,1,&ev);
+                if(rec.EventType==KEY_EVENT)
                 {
-                    print = false;
-                    switch(rec.Event.KeyEvent.uChar.AsciiChar)
+                    if(rec.Event.KeyEvent.bKeyDown)
                     {
-                    case '1':
-                        cout<<"Enter time in the format \"DD/MM/YYYY HH:MM:SS\" : \n";
-                        getline(cin,s); ss.str(s); time(&raw); timeinfo = *gmtime(&raw);
-                        ss>>get_time(&timeinfo,"%d/%m/%Y %H:%M:%S");
-                        event = system_clock::from_time_t(mktime(&timeinfo));
-                        Clock.add(event); break;
-                    case '2':
-                        break;
-                    case '3':
-                        cout<<"System time : \n";
-                        raw = system_clock::to_time_t(system_clock::now());
-                        strftime(buf,100,"%d/%m/%Y %H:%M:%S",localtime(&raw));
-                        cout<<buf<<"\n"; break;
+                        print = false;
+                        switch(rec.Event.KeyEvent.uChar.AsciiChar)
+                        {
+                        case '1':
+                            cout<<"Enter time in format (HH:MM) or (DD/MM/YYYY HH:MM) : \n";
+                            getline(cin,s); Clock.add(s); break;
+                        case '2':
+                            Clock.print(); cout<<"Modify Command Line for Basic Alarm Clock : \n";
+                            cout<<"\nInstructions : \n\n";
+                            cout<<"Enter the desired command to perform the required operation : \n";
+                            cout<<"1) MODIFY [ALARM_INDEX] - Modifies Alarm at Index ALARM_INDEX-1. \n";
+                            cout<<"2) DELETE [ALARM_INDEX] - Deletes Alarm at Index ALARM_INDEX-1. \n";
+                            cout<<"3) EXIT - Exits from the utility. \n";
+                            while(true)
+                            {
+                                cout<<"\n>> "; getline(cin,s); to_upper(s);
+                                if(s=="EXIT") break;
+                                else if(s.substr(0,6)=="MODIFY") {  }
+                                else if(s.substr(0,6)=="DELETE") { Clock.remove(stoi(s.substr(s.find(' ')+1))); }
+                                else cout<<"Error : Invalid Command\n";
+                            }
+                            break;
+                        case '3':
+                            cout<<"System time : \n";
+                            raw = system_clock::to_time_t(system_clock::now());
+                            strftime(buf,100,"%d/%m/%Y %H:%M",localtime(&raw));
+                            cout<<buf<<"\n"; break;
+                        }
                     }
+                    cout<<"\n";
                 }
-                cout<<"\n";
             }
         }
     }
