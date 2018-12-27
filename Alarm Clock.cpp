@@ -6,37 +6,29 @@ using namespace chrono;
 using namespace std::literals;
 
 bool its_time;
+bool done;
 
 // Keeps checking for alarm hit, parallel to the program.
 void try_alarm()
 {
     m1.lock();
-    if(Clock.check(current_time()))
+    while(true)
     {
-        its_time = true;
-        system("cls");
-        cout<<"BOOM!\n";
-        SHELLEXECUTEINFO rSEI ={0}; rSEI.cbSize = sizeof( rSEI ); rSEI.lpVerb = "open";
-        rSEI.lpFile = "";
-        rSEI.lpParameters = "";
-        rSEI.lpDirectory = "";
-        rSEI.nShow = SW_HIDE; rSEI.fMask = SEE_MASK_NOCLOSEPROCESS;
-        ShellExecuteEx( &rSEI );
-        // Play the alarm for 120 seconds.
-        WaitForSingleObject(rSEI.hProcess,120000);
-        CloseHandle(rSEI.hProcess);
+        if(not its_time && Clock.check())
+        {
+            Program::init();
+            Program::run();
+            Program::end();
+            its_time = true;
+        }
+        else if(its_time) { its_time=false; Program::end(); }
     }
-    else its_time = false;
     m1.unlock();
 }
 
-int main(int argc, char** argv)
+void code()
 {
-    //BindToRegistry(argv[0]);
-
-    //thread t1(try_alarm);
-    //t1.join();
-
+    //m1.lock();
     char buf[100]; auto old_count = Clock.count(); string s;
     INPUT_RECORD rec; DWORD ev; time_t raw; bool print = false;
 
@@ -86,8 +78,8 @@ int main(int argc, char** argv)
                             cout<<"3) EXIT - Exits from the utility. \n";
                             while(true)
                             {
-                                cout<<"\n>> "; getline(cin,s); to_upper(s);
-                                if(s=="EXIT") break;
+                                cout<<"\n>> "; getline(cin,s); s=to_upper(s);
+                                if(s=="EXIT"||s.empty()) break;
                                 else if(s.substr(0,6)=="MODIFY") {  }
                                 else if(s.substr(0,6)=="DELETE") { Clock.remove(stoi(s.substr(s.find(' ')+1))); }
                                 else cout<<"Error : Invalid Command\n";
@@ -104,5 +96,23 @@ int main(int argc, char** argv)
                 }
             }
         }
+    }
+    //m1.unlock();
+}
+
+int main(int argc, char** argv)
+{
+    try
+    {
+        //BindToRegistry(argv[0]);
+        done=false;
+        thread t1(try_alarm);
+        thread t2(code);
+        t1.join();
+        t2.join();
+    }
+    catch(exception& e)
+    {
+        cerr<<"Error : "<<e.what()<<"\n";
     }
 }

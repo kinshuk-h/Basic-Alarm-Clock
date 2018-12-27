@@ -27,10 +27,11 @@ inline auto current_time()
 
 class Alarm
 {
-    std::vector<system_point> times;
+    std::vector<system_point> times; int n; bool start;
 public:
     Alarm()
     {
+        n=-500; start=false;
         std::ifstream fin; fin.open("AlarmList.cfg");
         std::string s; std::stringstream ss; tm timeinfo;
         system_point event;
@@ -43,13 +44,14 @@ public:
         }
         fin.close();
     }
-    ~Alarm() { this->refresh(); }
+    ~Alarm() { this->refresh(); Program::terminate(); }
     std::vector<system_point>::size_type count() const noexcept
     {
         return times.size();
     }
     void refresh() noexcept
     {
+        std::cout<<"Refreshing\n";
         std::set<system_point> mys(times.begin(),times.end());
         times.assign(mys.begin(),mys.end());
         char s[100]; time_t raw; std::ofstream fout; fout.open("AlarmList.cfg",std::ios::trunc);
@@ -80,18 +82,24 @@ public:
     }
     void remove(std::vector<system_point>::size_type idx) noexcept
     {
-        times.erase(times.begin()+idx-1,times.begin()+idx);
+        times.erase(times.begin()+idx-1);
     }
-    bool check(system_point value)
+    bool check()
     {
-        auto it = std::find_if(times.begin(),times.end(),
-                               [](system_point pt)
-                               {
-                                   return (std::chrono::duration_cast<std::chrono::seconds>
-                                           (pt-current_time()).count())>60;
+        //auto spt = current_time();
+        //auto it = std::find_if(times.begin(),times.end(),\
+                               [spt](system_point pt)\
+                               {\
+                                   return (std::chrono::duration_cast<std::chrono::seconds>\
+                                           (pt-spt).count())>0;\
                                });
-        times.erase(times.begin(),it-1);
-        return false;
+        //if(it!=times.end()) times.erase(times.begin(),it-1);
+        //if(times[0]==spt) return true;
+        //else
+            n++; Sleep(1);
+            //if(n<0) std::cout<<n<<"\n";
+            return (n>0?true:false);
+        //return false;
         //auto dur = duration_cast<seconds>(tp-system_clock::now()).count();
     }
     void print()
