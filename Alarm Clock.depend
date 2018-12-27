@@ -1,0 +1,35 @@
+# depslib dependency file v1.0
+1545841742 source:h:\all c++ files\incomplete\others\alarm clock\alarm clock.cpp
+	"Interface.hpp"
+	"Time.hpp"
+
+1544954021 h:\all c++ files\incomplete\others\alarm clock\interface.hpp
+	<windows.h>
+
+1545842523 h:\all c++ files\incomplete\others\alarm clock\time.hpp
+	"General.hpp"
+	<sstream>
+	<fstream>
+	<vector>
+	<set>
+	<chrono>
+	<thread>
+	<mutex>
+	<ctime>
+
+1544955554 h:\all c++ files\incomplete\others\alarm clock\general.hpp
+	<algorithm>
+	<cxxabi.h>
+	<typeinfo>
+	<iostream>
+	<iomanip>
+	<string>
+	<locale>
+	<regex>
+
+1545841928 source:h:\all c++ files\incomplete\others\alarm clock\song player.cpp
+	<string>
+	<vector>
+	<windows.h>
+	<iostream>
+
