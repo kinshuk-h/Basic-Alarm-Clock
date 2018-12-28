@@ -4,8 +4,26 @@
 using namespace std;
 using namespace chrono;
 
-bool its_time;
-bool done;
+std::atomic<bool> its_time = false;
+
+void ask_alarm()
+{
+    m2.lock();
+    while(true)
+    {
+        //MessageBox(nullptr,to_string(its_time).c_str(),"Check",MB_OK);
+        if(its_time)
+        {
+            int res = TimedMessageBox(nullptr,("Alarm \""+Clock.ring()+"\" is active!\n"
+                                      "Would you like to Switch it off?").c_str(),"Alarm Active!",
+                                      MB_YESNO|MB_ICONINFORMATION,60000);
+            if(res == IDYES) Program::terminate();
+            its_time = false;
+        }
+
+    }
+    m2.unlock();
+}
 
 // Keeps checking for alarm hit, parallel to the program.
 void try_alarm()
@@ -16,11 +34,11 @@ void try_alarm()
         if(not its_time && Clock.check())
         {
             Program::init();
+            its_time = true;
             Program::run();
             Program::end();
-            its_time = true;
         }
-        else if(its_time) { its_time=false; Program::end(); }
+        //else if(its_time) { its_time=false; Program::end(); }
     }
     m1.unlock();
 }
@@ -109,11 +127,12 @@ int main(int argc, char** argv)
     try
     {
         //BindToRegistry(argv[0]);
-        done=false;
         thread t1(try_alarm);
-        thread t2(code);
+        thread t2(ask_alarm);
+        thread t3(code);
         t1.join();
         t2.join();
+        t3.join();
     }
     catch(exception& e)
     {

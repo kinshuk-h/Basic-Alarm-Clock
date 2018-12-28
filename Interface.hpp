@@ -20,6 +20,21 @@ void BindToRegistry(char* path)
     RegCloseKey(hkey);
 }
 
+int TimedMessageBox(HWND hWnd, LPCSTR sText, LPCSTR sCaption, UINT uType, DWORD dwMilliseconds)
+{
+    typedef int(__stdcall *MSGBOXWAPI)(IN HWND hWnd, IN LPCSTR lpText,
+                IN LPCSTR lpCaption, IN UINT uType, IN WORD wLanguageId, IN DWORD dwMilliseconds);
+    int iResult; HMODULE hUser32 = LoadLibraryA("user32.dll");
+    if (hUser32)
+    {
+        auto MessageBoxTimeoutA = (MSGBOXWAPI)GetProcAddress(hUser32, "MessageBoxTimeoutA");
+        iResult = MessageBoxTimeoutA(hWnd, sText, sCaption, uType, 0, dwMilliseconds);
+        FreeLibrary(hUser32);
+    }
+    else iResult = MessageBox(hWnd, sText, sCaption, uType);
+    return iResult;
+}
+
 class Program
 {
     static bool inited,running;

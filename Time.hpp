@@ -11,11 +11,12 @@
 #include <set>
 
 #include <chrono>
+#include <atomic>
 #include <thread>
 #include <mutex>
 #include <ctime>
 
-std::mutex m1;
+std::mutex m1,m2;
 
 using namespace std::literals;
 using sys_clock = std::chrono::system_clock;
@@ -67,6 +68,12 @@ public:
         fin.close();
     }
     ~Alarm() { this->refresh(); Program::terminate(); }
+    std::string ring()
+    {
+        std::stringstream ss;
+        if(times.size()>0) { ss<<times[0]; return ss.str(); }
+        return "";
+    }
     std::vector<system_point>::size_type count() const noexcept
     {
         return times.size();
