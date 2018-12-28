@@ -17,6 +17,7 @@
 
 std::mutex m1;
 
+using namespace std::literals;
 using sys_clock = std::chrono::system_clock;
 using system_point = std::chrono::time_point<sys_clock>;
 
@@ -72,8 +73,8 @@ public:
     }
     void refresh() noexcept
     {
-        std::set<system_point> mys(times.begin(),times.end());
-        times.assign(mys.begin(),mys.end());
+        std::set<system_point> mys(times.begin(),times.end()); times.clear();
+        auto spt = current_time(); for(const auto& time:mys) if(time>=spt) times.push_back(time);
         std::ofstream fout; fout.open("AlarmList.cfg",std::ios::trunc);
         for(const auto& time:times) fout<<time<<"\n";
         fout.close();
@@ -100,21 +101,9 @@ public:
     }
     bool check()
     {
-        //auto spt = current_time();
-        //auto it = std::find_if(times.begin(),times.end(),\
-                               [spt](system_point pt)\
-                               {\
-                                   return (std::chrono::duration_cast<std::chrono::seconds>\
-                                           (pt-spt).count())>0;\
-                               });
-        //if(it!=times.end()) times.erase(times.begin(),it-1);
-        //if(times[0]==spt) return true;
-        //else
-            n++; Sleep(1);
-            //if(n<0) std::cout<<n<<"\n";
-            return (n>0?true:false);
-        //return false;
-        //auto dur = duration_cast<seconds>(tp-system_clock::now()).count();
+        this->refresh(); auto spt = current_time();
+        if(times.size()>0&&times[0]-spt<1s) { return true; }
+        else { return false; }
     }
     void print()
     {

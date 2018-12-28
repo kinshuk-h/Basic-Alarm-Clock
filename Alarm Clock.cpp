@@ -3,7 +3,6 @@
 
 using namespace std;
 using namespace chrono;
-using namespace std::literals;
 
 bool its_time;
 bool done;
@@ -28,26 +27,19 @@ void try_alarm()
 
 void code()
 {
-    //m1.lock();
-    string s,path; size_t vol; INPUT_RECORD rec; DWORD ev; bool print = false;
-
-    //std::cout<<demangle(typeid(decltype(tp)).name())<<"\n";
-    //std::cout<<demangle(typeid(decltype(system_clock::now())).name())<<"\n";
-    //long long dur = duration_cast<seconds>(tp-system_clock::now()).count();
-    //if(dur<0) cout<<"Time already Elapsed!\n";
-    //else if(dur==0) cout<<"Trring!\n";
-    //else cout<<"Gotta wait now\n";
-    //if(tp<=system_clock::now()) cout<<"Error : Cannot set an alarm in the past.\n";
-
+    string s,path; size_t vol;
+    INPUT_RECORD rec; DWORD ev; bool print = false;
+    auto spt = current_time();
     while(true)
     {
+        if(current_time()-spt>2s) { spt=current_time(); GOTO(0,4); std::cout<<spt; GOTO(0,13); }
         if(!its_time)
         {
             if(!print)
             {
                 system("cls");
                 cout<<"Basic Alarm Clock\n-----------------\n\n";
-                cout<<"System time : \n"<<current_time()<<"\n\n";
+                cout<<"System time : \n"<<spt<<"\n\n";
                 cout<<"Enter an Option : \n\n";
                 cout<<"1) Add a new alarm\n";
                 cout<<"2) View existing alarms\n";
@@ -72,17 +64,25 @@ void code()
                             Clock.print(); print = false; Sleep(2000);
                             break;
                         case '3':
-                            print = false; cout<<"Modify Command Line for Basic Alarm Clock : \n";
-                            cout<<"\nInstructions : \n\n";
-                            cout<<"Enter the desired command to perform the required operation : \n";
-                            cout<<"1) MODIFY [ALARM_INDEX] - Modifies Alarm at Index ALARM_INDEX-1. \n";
-                            cout<<"2) DELETE [ALARM_INDEX] - Deletes Alarm at Index ALARM_INDEX-1. \n";
-                            cout<<"3) EXIT - Exits from the utility. \n";
+                            print = false; Clock.print();
+                            cout<<"Action Command Line for Basic Alarm Clock : \n\n";
+                            cout<<"Enter the desired command to perform the required operation : \n\n";
+                            cout<<"1) MODIFY <AIDX> <NEW_TIME> \n"
+                                  "   [ Modifies Alarm at Index AIDX-1, replacing with NEW_TIME ] \n";
+                            cout<<"2) DELETE <AIDX> \n"
+                                  "   [ Deletes Alarm at Index AIDX-1 ] \n";
+                            cout<<"3) EXIT \n"
+                                  "   [ Exits from the utility ] \n";
                             while(true)
                             {
                                 cout<<"\n>> "; getline(cin,s); s=to_upper(s);
                                 if(s=="EXIT"||s.empty()) break;
-                                else if(s.substr(0,6)=="MODIFY") {  }
+                                else if(s.substr(0,6)=="MODIFY")
+                                {
+                                    //Clock.remove(stoi(s.substr(s.find(' ')+1)));
+
+                                    if(not s.empty()) Clock.add(s);
+                                }
                                 else if(s.substr(0,6)=="DELETE") { Clock.remove(stoi(s.substr(s.find(' ')+1))); }
                                 else cout<<"Error : Invalid Command\n";
                             }
@@ -97,7 +97,6 @@ void code()
             }
         }
     }
-    //m1.unlock();
 }
 
 int main(int argc, char** argv)
