@@ -25,6 +25,34 @@ inline auto current_time()
     return sys_clock::now();
 }
 
+template <typename Clock, typename Duration>
+std::ostream& operator<<(std::ostream& os, const std::chrono::time_point<Clock, Duration>& timep)
+{
+    auto converted_timep = Clock::to_time_t(timep);
+    os<<std::put_time(std::localtime(&converted_timep),"%d/%m/%Y %H:%M");
+    return os;
+}
+
+template <typename Clock, typename Duration>
+std::istream& operator>>(std::istream& is, std::chrono::time_point<Clock, Duration>& timep)
+{
+    std::string data; getline(is>>std::ws,data); tm tinfo = {};
+    std::stringstream(data)>>std::get_time(&tinfo,"%d/%m/%Y %H:%M");
+    timep = sys_clock::from_time_t(mktime(&tinfo)); return is;
+}
+
+template <typename Clock, typename Duration>
+auto operator++(std::chrono::time_point<Clock,Duration>& tp)
+{
+    tp = Clock::from_time_t(Clock::to_time_t(tp)+86400); return tp;
+}
+
+template <typename Clock, typename Duration>
+auto operator++(std::chrono::time_point<Clock,Duration>& tp,int)
+{
+    auto tp2 = tp; ++tp; return tp2;
+}
+
 class Alarm
 {
     std::vector<system_point> times; int n; bool start;
@@ -33,15 +61,8 @@ public:
     {
         n=-500; start=false;
         std::ifstream fin; fin.open("AlarmList.cfg");
-        std::string s; std::stringstream ss; tm timeinfo;
-        system_point event;
-        while(getline(fin,s))
-        {
-            time_t raw; time(&raw); timeinfo = *localtime(&raw);
-            ss.str(s); ss>>std::get_time(&timeinfo,"%d/%m/%Y %H:%M");
-            event = sys_clock::from_time_t(mktime(&timeinfo));
-            if(event>=current_time()) times.push_back(event);
-        }
+        system_point event; auto spt = current_time();
+        while(fin>>event) { if(event>=spt) { times.push_back(event); } }
         fin.close();
     }
     ~Alarm() { this->refresh(); Program::terminate(); }
@@ -51,32 +72,25 @@ public:
     }
     void refresh() noexcept
     {
-        std::cout<<"Refreshing\n";
         std::set<system_point> mys(times.begin(),times.end());
         times.assign(mys.begin(),mys.end());
-        char s[100]; time_t raw; std::ofstream fout; fout.open("AlarmList.cfg",std::ios::trunc);
-        for(size_t i=0;i<times.size();i++)
-        {
-            raw = sys_clock::to_time_t(times[i]);
-            strftime(s,100,"%d/%m/%Y %H:%M",localtime(&raw));
-            fout<<s<<"\n";
-        }
+        std::ofstream fout; fout.open("AlarmList.cfg",std::ios::trunc);
+        for(const auto& time:times) fout<<time<<"\n";
         fout.close();
     }
     void add(std::string str) noexcept
     {
         if(regex_match(str,std::regex("(\\d{2}/\\d{2}/\\d{4} )?((([0-1]\\d)|[2][0-3]):[0-5]\\d)")))
         {
-            time_t raw; tm timeinfo; std::stringstream ss; ss.str(str); time(&raw); timeinfo = *localtime(&raw);
-            if(str.find('/')!=std::string::npos) ss>>std::get_time(&timeinfo,"%d/%m/%Y %H:%M");
+            system_point point; std::stringstream ss;
+            if(str.find('/')!=std::string::npos) { ss.str(str); ss>>point; }
             else
             {
-                ss>>std::get_time(&timeinfo,"%H:%M");
-                if(sys_clock::from_time_t(mktime(&timeinfo))<=current_time()) timeinfo.tm_mday++;
+                ss<<current_time(); str = ss.str().substr(0,11) + str;
+                ss.str(str); ss>>point; if(point<=current_time()) ++point;
             }
-            system_point point = sys_clock::from_time_t(mktime(&timeinfo));
             if(point<=current_time()) std::cout<<"Error : Cannot set an alarm in the past.\n";
-            else times.push_back(point);
+            else { times.push_back(point); } this->refresh();
         }
         else std::cout<<"Error : Time format is Invalid. Try Again\n";
     }

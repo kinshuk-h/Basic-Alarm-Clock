@@ -29,8 +29,7 @@ void try_alarm()
 void code()
 {
     //m1.lock();
-    char buf[100]; auto old_count = Clock.count(); string s;
-    INPUT_RECORD rec; DWORD ev; time_t raw; bool print = false;
+    string s,path; size_t vol; INPUT_RECORD rec; DWORD ev; bool print = false;
 
     //std::cout<<demangle(typeid(decltype(tp)).name())<<"\n";
     //std::cout<<demangle(typeid(decltype(system_clock::now())).name())<<"\n";
@@ -46,14 +45,15 @@ void code()
         {
             if(!print)
             {
+                system("cls");
                 cout<<"Basic Alarm Clock\n-----------------\n\n";
-                cout<<"Enter an Option : \n";
+                cout<<"System time : \n"<<current_time()<<"\n\n";
+                cout<<"Enter an Option : \n\n";
                 cout<<"1) Add a new alarm\n";
-                cout<<"2) View, modify and delete existing alarms\n";
-                cout<<"3) View current system time\n";
-                cout<<"4) Alter settings : Wake up media, Volume, Permissions, etc.\n\n";
-                //cout<<"Alarm Count : "<<Clock.count()<<"\n";
-                print = true; if(Clock.count()!=old_count) { Clock.refresh(); old_count = Clock.count(); }
+                cout<<"2) View existing alarms\n";
+                cout<<"3) Modify and delete existing alarms\n";
+                cout<<"4) Alter settings : Wake up media, Volume, etc.\n\n";
+                print = true;
             }
             GetNumberOfConsoleInputEvents(in,&ev);
             if(ev>0&&!its_time)
@@ -63,14 +63,16 @@ void code()
                 {
                     if(rec.Event.KeyEvent.bKeyDown)
                     {
-                        print = false;
                         switch(rec.Event.KeyEvent.uChar.AsciiChar)
                         {
                         case '1':
                             cout<<"Enter time in format (HH:MM) or (DD/MM/YYYY HH:MM) : \n";
-                            getline(cin,s); Clock.add(s); break;
+                            getline(cin,s); Clock.add(s); print = false; break;
                         case '2':
-                            Clock.print(); cout<<"Modify Command Line for Basic Alarm Clock : \n";
+                            Clock.print(); print = false; Sleep(2000);
+                            break;
+                        case '3':
+                            print = false; cout<<"Modify Command Line for Basic Alarm Clock : \n";
                             cout<<"\nInstructions : \n\n";
                             cout<<"Enter the desired command to perform the required operation : \n";
                             cout<<"1) MODIFY [ALARM_INDEX] - Modifies Alarm at Index ALARM_INDEX-1. \n";
@@ -85,14 +87,12 @@ void code()
                                 else cout<<"Error : Invalid Command\n";
                             }
                             break;
-                        case '3':
-                            cout<<"System time : \n";
-                            raw = system_clock::to_time_t(system_clock::now());
-                            strftime(buf,100,"%d/%m/%Y %H:%M",localtime(&raw));
-                            cout<<buf<<"\n"; break;
+                        case '4':
+                            print = false; std::cout<<"Type in the new path followed by the new volume (b/w 0-1000) : \n";
+                            std::cin>>path>>vol; Program::reload(path,vol%1000); std::cout<<"\n"; break;
                         }
                     }
-                    cout<<"\n";
+                    if(not print) cout<<"\n";
                 }
             }
         }

@@ -1,7 +1,9 @@
 #ifndef INTERFACE_HPP_INCLUDED
 #define INTERFACE_HPP_INCLUDED
 
+#include <iostream>
 #include <windows.h>
+#include <string>
 
 HANDLE in  = GetStdHandle(STD_INPUT_HANDLE),
        out = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -50,6 +52,16 @@ public:
     static void terminate()
     {
         TerminateProcess(rSEI.hProcess,0);
+    }
+    static void reload(const std::string& path, size_t volume)
+    {
+        std::cout<<"New Song : "<<path<<"\n";
+        rSEI.lpParameters = (path+std::to_string(volume)).c_str();
+        rSEI.nShow = SW_SHOWNORMAL;
+        ShellExecuteEx(&rSEI);
+        WaitForSingleObject(rSEI.hProcess,60000);
+        TerminateProcess(rSEI.hProcess,0);
+        rSEI.nShow = SW_HIDE;
     }
 };
 
