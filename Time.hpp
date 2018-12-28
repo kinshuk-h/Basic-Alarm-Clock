@@ -107,16 +107,10 @@ public:
     }
     void print()
     {
-        std::cout<<"Currently "<<this->count()<<" Alarm"<<(this->count()>1?"s ":" ")
-                 <<(this->count()>1?"are":"is")<<" set as of now.\n\n";
-        char buf[100]; time_t raw;
-        for(const auto& tp:times)
-        {
-            raw = sys_clock::to_time_t(tp);
-            strftime(buf,100,"%d/%m/%Y %H:%M",localtime(&raw));
-            std::cout<<buf<<"\n";
-        }
-        std::cout<<"\n";
+        std::cout<<"Currently "<<this->count()<<" Alarm"<<(this->count()!=1?"s ":" ")
+                 <<(this->count()!=1?"are":"is")<<" set as of now.\n\n";
+        for(const auto& tp:times) { std::cout<<tp<<"\n"; }
+        if(this->count()>0) std::cout<<"\n";
     }
 };
 
