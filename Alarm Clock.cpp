@@ -27,7 +27,7 @@ void try_alarm()
 
 void code()
 {
-    string s,path; size_t vol;
+    string s,path; size_t vol,pos;
     INPUT_RECORD rec; DWORD ev; bool print = false;
     auto spt = current_time();
     while(true)
@@ -81,8 +81,9 @@ void code()
                                     if(s=="EXIT"||s.empty()) break;
                                     else if(s.substr(0,6)=="MODIFY")
                                     {
-                                        //Clock.remove(stoi(s.substr(s.find(' ')+1)));
-
+                                        pos = s.find(' ');
+                                        Clock.remove(stoi(s.substr(pos+1,s.size()-s.find(' ',pos+1))));
+                                        s = s.substr(s.find(' ',pos+1)+1);
                                         if(not s.empty()) Clock.add(s);
                                     }
                                     else if(s.substr(0,6)=="DELETE") { Clock.remove(stoi(s.substr(s.find(' ')+1))); }
