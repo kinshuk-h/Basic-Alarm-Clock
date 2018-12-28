@@ -65,27 +65,31 @@ void code()
                             break;
                         case '3':
                             print = false; Clock.print();
-                            cout<<"Action Command Line for Basic Alarm Clock : \n\n";
-                            cout<<"Enter the desired command to perform the required operation : \n\n";
-                            cout<<"1) MODIFY <AIDX> <NEW_TIME> \n"
-                                  "   [ Modifies Alarm at Index AIDX-1, replacing with NEW_TIME ] \n";
-                            cout<<"2) DELETE <AIDX> \n"
-                                  "   [ Deletes Alarm at Index AIDX-1 ] \n";
-                            cout<<"3) EXIT \n"
-                                  "   [ Exits from the utility ] \n";
-                            while(true)
+                            if(Clock.count()>0)
                             {
-                                cout<<"\n>> "; getline(cin,s); s=to_upper(s);
-                                if(s=="EXIT"||s.empty()) break;
-                                else if(s.substr(0,6)=="MODIFY")
+                                cout<<"Action Command Line for Basic Alarm Clock : \n\n";
+                                cout<<"Enter the desired command to perform the required operation : \n\n";
+                                cout<<"1) MODIFY <AIDX> <NEW_TIME> \n"
+                                      "   [ Modifies Alarm at Index AIDX-1, replacing with NEW_TIME ] \n";
+                                cout<<"2) DELETE <AIDX> \n"
+                                      "   [ Deletes Alarm at Index AIDX-1 ] \n";
+                                cout<<"3) EXIT \n"
+                                      "   [ Exits from the utility ] \n";
+                                while(true)
                                 {
-                                    //Clock.remove(stoi(s.substr(s.find(' ')+1)));
+                                    cout<<"\n>> "; getline(cin,s); s=to_upper(s);
+                                    if(s=="EXIT"||s.empty()) break;
+                                    else if(s.substr(0,6)=="MODIFY")
+                                    {
+                                        //Clock.remove(stoi(s.substr(s.find(' ')+1)));
 
-                                    if(not s.empty()) Clock.add(s);
+                                        if(not s.empty()) Clock.add(s);
+                                    }
+                                    else if(s.substr(0,6)=="DELETE") { Clock.remove(stoi(s.substr(s.find(' ')+1))); }
+                                    else cout<<"Error : Invalid Command\n";
                                 }
-                                else if(s.substr(0,6)=="DELETE") { Clock.remove(stoi(s.substr(s.find(' ')+1))); }
-                                else cout<<"Error : Invalid Command\n";
                             }
+                            else Sleep(2000);
                             break;
                         case '4':
                             print = false; std::cout<<"Type in the new path followed by the new volume (b/w 0-1000) : \n";
